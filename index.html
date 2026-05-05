@@ -5,7 +5,48 @@
 <title>XRPRippleFlare Exchange</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+<script type="module">
+import { createWeb3Modal, defaultConfig } from "https://unpkg.com/@web3modal/ethers@4.2.3/dist/index.js";
+
+/* WALLET CONFIG */
+const projectId = "6eb8ae24484e78bb6c25a73a7195d774";
+
+const mainnet = {
+  chainId: 1,
+  name: "Ethereum",
+  currency: "ETH",
+  explorerUrl: "https://etherscan.io",
+  rpcUrl: "https://cloudflare-eth.com"
+};
+
+const metadata = {
+  name: "XRPRippleFlare",
+  description: "Wallet-Agnostic Exchange dApp",
+  url: window.location.origin,
+  icons: []
+};
+
+/* CREATE MODAL */
+const modal = createWeb3Modal({
+  ethersConfig: defaultConfig({ metadata }),
+  chains: [mainnet],
+  projectId
+});
+
+/* EXPOSE */
+window.modal = modal;
+
+/* CONNECT FUNCTION */
+window.connectWallet = async () => {
+  const provider = await modal.open();
+
+  const signer = provider.getSigner();
+  const address = await signer.getAddress();
+
+  document.getElementById("wallet").innerText = address;
+  document.getElementById("dashboard").style.display = "block";
+};
+</script>
 
 <style>
 body {
@@ -16,21 +57,24 @@ body {
 }
 
 .topbar {
-  display: flex;
-  justify-content: space-between;
   padding: 15px;
   background: #0f172a;
+  display: flex;
+  justify-content: space-between;
 }
 
-h1 {
-  margin: 0;
-  font-size: 18px;
-  color: #38bdf8;
+button {
+  padding: 12px;
+  border: none;
+  background: #38bdf8;
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
 }
+
+button:hover { background: #0ea5e9; }
 
 .container {
-  max-width: 800px;
-  margin: auto;
   padding: 20px;
 }
 
@@ -40,46 +84,6 @@ h1 {
   border-radius: 12px;
   margin-top: 15px;
 }
-
-button {
-  padding: 12px;
-  width: 100%;
-  border: none;
-  border-radius: 8px;
-  background: #38bdf8;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-button:hover { background: #0ea5e9; }
-
-.modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.7);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.modal-box {
-  background: #111827;
-  padding: 20px;
-  border-radius: 12px;
-  width: 320px;
-}
-
-.option {
-  padding: 12px;
-  margin-top: 10px;
-  background: #1f2937;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.option:hover { background: #374151; }
-
-.hidden { display: none; }
 
 .value {
   color: #22c55e;
@@ -91,131 +95,18 @@ button:hover { background: #0ea5e9; }
 <body>
 
 <div class="topbar">
-  <h1>XRPRippleFlare Exchange</h1>
-  <button onclick="openModal()" style="width:auto;">Connect Wallet</button>
+  <h2>XRPRippleFlare Exchange</h2>
+  <button onclick="connectWallet()">Connect Wallet</button>
 </div>
 
 <div class="container">
 
-<div id="dashboard" class="hidden">
-
-  <div class="card">
-    <h3>Wallet</h3>
-    <div class="value" id="wallet"></div>
-  </div>
-
-  <div class="card">
-    <h3>Network</h3>
-    <div class="value" id="network"></div>
-  </div>
-
+<div id="dashboard" class="card" style="display:none;">
+  <h3>Wallet Connected</h3>
+  <div id="wallet" class="value"></div>
 </div>
 
 </div>
-
-<!-- MODAL -->
-<div id="modal" class="modal hidden">
-  <div class="modal-box">
-    <h3>Select Wallet</h3>
-
-    <div class="option" onclick="connectInjected()">
-      🦊 MetaMask / Browser Wallet
-    </div>
-
-    <div class="option" onclick="connectWalletConnect()">
-      📱 WalletConnect (Mobile QR)
-    </div>
-
-    <div class="option" onclick="closeModal()">
-      ❌ Cancel
-    </div>
-  </div>
-</div>
-
-<script type="module">
-
-import EthereumProvider from "https://esm.sh/@walletconnect/ethereum-provider";
-
-let provider;
-let signer;
-
-/* UI */
-function openModal() {
-  document.getElementById("modal").classList.remove("hidden");
-}
-function closeModal() {
-  document.getElementById("modal").classList.add("hidden");
-}
-window.openModal = openModal;
-window.closeModal = closeModal;
-
-/* =========================
-   INJECTED WALLET
-========================= */
-async function connectInjected() {
-  try {
-
-    if (!window.ethereum) {
-      alert("No wallet found. Use WalletConnect.");
-      return;
-    }
-
-    provider = new ethers.providers.Web3Provider(window.ethereum);
-    await provider.send("eth_requestAccounts", []);
-    signer = provider.getSigner();
-
-    const addr = await signer.getAddress();
-    const net = await provider.getNetwork();
-
-    showApp(addr, net.name);
-    closeModal();
-
-  } catch (e) {
-    alert(e.message);
-  }
-}
-window.connectInjected = connectInjected;
-
-/* =========================
-   WALLETCONNECT (FIXED + RELIABLE)
-========================= */
-async function connectWalletConnect() {
-  try {
-
-    const wc = await EthereumProvider.init({
-      projectId: "6eb8ae24484e78bb6c25a73a7195d774",
-      chains: [1],
-      showQrModal: true
-    });
-
-    await wc.connect();
-
-    provider = new ethers.providers.Web3Provider(wc);
-    signer = provider.getSigner();
-
-    const addr = await signer.getAddress();
-    const net = await provider.getNetwork();
-
-    showApp(addr, net.name);
-    closeModal();
-
-  } catch (e) {
-    alert("WalletConnect error: " + e.message);
-  }
-}
-window.connectWalletConnect = connectWalletConnect;
-
-/* =========================
-   UI
-========================= */
-function showApp(address, network) {
-  document.getElementById("dashboard").classList.remove("hidden");
-
-  document.getElementById("wallet").innerText = address;
-  document.getElementById("network").innerText = network;
-}
-
-</script>
 
 </body>
 </html>
