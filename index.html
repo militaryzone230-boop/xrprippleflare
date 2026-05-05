@@ -7,6 +7,9 @@
 
 <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 
+<!-- WalletConnect (IMPORTANT: must load BEFORE script) -->
+<script src="https://unpkg.com/@walletconnect/ethereum-provider@2.10.6/dist/index.umd.js"></script>
+
 <style>
 body {
   margin: 0;
@@ -31,27 +34,16 @@ h1 {
 }
 
 .container {
-  max-width: 900px;
+  max-width: 800px;
   margin: auto;
   padding: 20px;
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit,minmax(240px,1fr));
-  gap: 15px;
 }
 
 .card {
   background: #111827;
   padding: 15px;
   border-radius: 12px;
-  box-shadow: 0 0 15px rgba(56,189,248,0.08);
-}
-
-.value {
-  color: #22c55e;
-  word-break: break-all;
+  margin-top: 15px;
 }
 
 button {
@@ -70,8 +62,7 @@ button:hover {
 
 .modal {
   position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
+  inset: 0;
   background: rgba(0,0,0,0.7);
   display: flex;
   justify-content: center;
@@ -98,6 +89,11 @@ button:hover {
 }
 
 .hidden { display: none; }
+
+.value {
+  color: #22c55e;
+  word-break: break-all;
+}
 </style>
 </head>
 
@@ -112,25 +108,21 @@ button:hover {
 
 <div id="dashboard" class="hidden">
 
-  <div class="grid">
+  <div class="card">
+    <h3>Wallet Address</h3>
+    <div class="value" id="wallet"></div>
+  </div>
 
-    <div class="card">
-      <h3>Wallet</h3>
-      <div class="value" id="wallet"></div>
-    </div>
-
-    <div class="card">
-      <h3>Network</h3>
-      <div class="value" id="network"></div>
-    </div>
-
+  <div class="card">
+    <h3>Network</h3>
+    <div class="value" id="network"></div>
   </div>
 
 </div>
 
 </div>
 
-<!-- WALLET MODAL -->
+<!-- MODAL -->
 <div id="modal" class="modal hidden">
   <div class="modal-box">
     <h3>Select Wallet</h3>
@@ -139,7 +131,7 @@ button:hover {
       🦊 MetaMask / Browser Wallet
     </div>
 
-    <div class="option" onclick="connectWC()">
+    <div class="option" onclick="connectWalletConnect()">
       📱 WalletConnect (Mobile QR)
     </div>
 
@@ -149,9 +141,6 @@ button:hover {
   </div>
 </div>
 
-<!-- WalletConnect -->
-<script src="https://unpkg.com/@walletconnect/ethereum-provider@2.10.6/dist/index.umd.js"></script>
-
 <script>
 let provider;
 let signer;
@@ -160,18 +149,19 @@ let signer;
 function openModal() {
   document.getElementById("modal").classList.remove("hidden");
 }
+
 function closeModal() {
   document.getElementById("modal").classList.add("hidden");
 }
 
 /* =========================
-   INJECTED WALLET (MetaMask / Brave / etc.)
+   SAFE INJECTED WALLET
 ========================= */
 async function connectInjected() {
   try {
 
     if (!window.ethereum) {
-      alert("No browser wallet detected. Use WalletConnect.");
+      alert("No browser wallet found. Use WalletConnect.");
       return;
     }
 
@@ -186,17 +176,27 @@ async function connectInjected() {
     closeModal();
 
   } catch (e) {
-    alert(e.message);
+    alert("Wallet error: " + e.message);
   }
 }
 
 /* =========================
-   WALLETCONNECT (MOBILE + UNIVERSAL)
+   SAFE WALLETCONNECT (FIXED)
 ========================= */
-async function connectWC() {
+async function connectWalletConnect() {
   try {
 
-    const { EthereumProvider } = window.WalletConnectEthereumProvider;
+    // SAFE CHECK (prevents destructuring crash)
+    const EthereumProvider =
+      window.EthereumProvider ||
+      (window.WalletConnectEthereumProvider
+        ? window.WalletConnectEthereumProvider.EthereumProvider
+        : null);
+
+    if (!EthereumProvider) {
+      alert("WalletConnect failed to load. Refresh page and try again.");
+      return;
+    }
 
     const wc = await EthereumProvider.init({
       projectId: "6eb8ae24484e78bb6c25a73a7195d774",
@@ -216,7 +216,7 @@ async function connectWC() {
     closeModal();
 
   } catch (e) {
-    alert(e.message);
+    alert("WalletConnect error: " + e.message);
   }
 }
 
