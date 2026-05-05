@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>XRPRippleFlare</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <script src="https://unpkg.com/web3modal"></script>
+  <script src="https://unpkg.com/@walletconnect/web3-provider"></script>
+  <script src="https://unpkg.com/ethers/dist/ethers.min.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial;
+      background: #020617;
+      color: white;
+      text-align: center;
+    }
+    header {
+      padding: 20px;
+      background: #020617;
+    }
+    h1 {
+      color: #38bdf8;
+    }
+    .container {
+      padding: 40px 20px;
+    }
+    button {
+      padding: 12px 20px;
+      margin: 10px;
+      border: none;
+      border-radius: 6px;
+      background: #38bdf8;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    #walletAddress {
+      margin-top: 20px;
+      color: #22c55e;
+      word-break: break-all;
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <h1>XRPRippleFlare</h1>
+  <p>Secure Web3 Wallet Connection</p>
+</header>
+
+<div class="container">
+  <h2>Connect Your Wallet</h2>
+
+  <button onclick="connectWallet()">Connect Wallet</button>
+  <button onclick="disconnectWallet()">Disconnect</button>
+
+  <div id="walletAddress"></div>
+</div>
+
+<div class="container">
+  <h2>Contact</h2>
+  <p>Email: Miliyaryzone230@gmail.com</p>
+</div>
+
+<script>
+let web3Modal;
+let provider;
+let signer;
+
+window.addEventListener('load', async () => {
+
+  const providerOptions = {
+    walletconnect: {
+      package: window.WalletConnectProvider.default,
+      options: {
+        infuraId: "2e88b267af2b4dae8fab295d51943277" // replace this
+      }
+    }
+  };
+
+  web3Modal = new window.Web3Modal.default({
+    cacheProvider: false,
+    providerOptions
+  });
+
+});
+
+async function connectWallet() {
+  try {
+    provider = await web3Modal.connect();
+    const ethersProvider = new ethers.providers.Web3Provider(provider);
+    signer = ethersProvider.getSigner();
+
+    const address = await signer.getAddress();
+    document.getElementById("walletAddress").innerText =
+      "Connected: " + address;
+
+  } catch (err) {
+    console.log(err);
+  }
+}
+
+async function disconnectWallet() {
+  if (provider && provider.close) {
+    await provider.close();
+  }
+  provider = null;
+  document.getElementById("walletAddress").innerText = "";
+}
+</script>
+
+</body>
+</html>
