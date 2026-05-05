@@ -1,34 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>XRPRippleFlare</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-  <script src="https://unpkg.com/web3modal"></script>
-  <script src="https://unpkg.com/@walletconnect/web3-provider"></script>
-  <script src="https://unpkg.com/ethers/dist/ethers.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 
   <style>
     body {
       margin: 0;
-      font-family: Arial;
+      font-family: Arial, sans-serif;
       background: #020617;
       color: white;
       text-align: center;
     }
+
     header {
-      padding: 20px;
-      background: #020617;
+      padding: 25px;
+      background: #0f172a;
+      border-bottom: 1px solid #1e293b;
     }
+
     h1 {
       color: #38bdf8;
+      margin: 0;
     }
+
     .container {
-      padding: 40px 20px;
+      max-width: 500px;
+      margin: 30px auto;
+      padding: 25px;
+      background: #0f172a;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(56,189,248,0.15);
     }
+
     button {
-      padding: 12px 20px;
+      padding: 12px 18px;
       margin: 10px;
       border: none;
       border-radius: 6px;
@@ -37,10 +46,19 @@
       font-weight: bold;
       cursor: pointer;
     }
+
+    button:hover {
+      background: #0ea5e9;
+    }
+
     #walletAddress {
-      margin-top: 20px;
+      margin-top: 15px;
       color: #22c55e;
       word-break: break-all;
+    }
+
+    .error {
+      color: #ef4444;
     }
   </style>
 </head>
@@ -53,9 +71,9 @@
 </header>
 
 <div class="container">
-  <h2>Connect Your Wallet</h2>
+  <h2>Connect Wallet</h2>
 
-  <button onclick="connectWallet()">Connect Wallet</button>
+  <button onclick="connectWallet()">Connect MetaMask</button>
   <button onclick="disconnectWallet()">Disconnect</button>
 
   <div id="walletAddress"></div>
@@ -67,48 +85,36 @@
 </div>
 
 <script>
-let web3Modal;
 let provider;
 let signer;
 
-window.addEventListener('load', async () => {
-
-  const providerOptions = {
-    walletconnect: {
-      package: window.WalletConnectProvider.default,
-      options: {
-        infuraId: "2e88b267af2b4dae8fab295d51943277" // replace this
-      }
-    }
-  };
-
-  web3Modal = new window.Web3Modal.default({
-    cacheProvider: false,
-    providerOptions
-  });
-
-});
-
 async function connectWallet() {
   try {
-    provider = await web3Modal.connect();
-    const ethersProvider = new ethers.providers.Web3Provider(provider);
-    signer = ethersProvider.getSigner();
+    if (!window.ethereum) {
+      document.getElementById("walletAddress").innerHTML =
+        "<span class='error'>MetaMask not detected. Please install it.</span>";
+      return;
+    }
+
+    provider = new ethers.providers.Web3Provider(window.ethereum);
+
+    await provider.send("eth_requestAccounts", []);
+    signer = provider.getSigner();
 
     const address = await signer.getAddress();
+
     document.getElementById("walletAddress").innerText =
       "Connected: " + address;
 
   } catch (err) {
-    console.log(err);
+    document.getElementById("walletAddress").innerHTML =
+      "<span class='error'>Connection failed: " + err.message + "</span>";
   }
 }
 
-async function disconnectWallet() {
-  if (provider && provider.close) {
-    await provider.close();
-  }
+function disconnectWallet() {
   provider = null;
+  signer = null;
   document.getElementById("walletAddress").innerText = "";
 }
 </script>
