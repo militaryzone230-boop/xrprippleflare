@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>XRPRippleFlare - Crypto App</title>
+<title>XRPRippleFlare Exchange</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
 <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
@@ -11,49 +11,52 @@
 body {
   margin: 0;
   font-family: Arial;
-  background: #0b1220;
+  background: #0a0f1c;
   color: white;
 }
 
-/* HEADER */
-header {
-  padding: 15px;
-  background: #0f172a;
+.topbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 15px;
+  background: #0f172a;
+  border-bottom: 1px solid #1e293b;
 }
 
-h1 { color: #38bdf8; margin: 0; font-size: 20px; }
+h1 {
+  color: #38bdf8;
+  font-size: 18px;
+  margin: 0;
+}
 
-/* LAYOUT */
 .container {
-  max-width: 1000px;
+  max-width: 900px;
   margin: auto;
   padding: 20px;
 }
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit,minmax(250px,1fr));
+  grid-template-columns: repeat(auto-fit,minmax(240px,1fr));
   gap: 15px;
 }
 
-/* CARDS */
 .card {
   background: #111827;
   padding: 15px;
   border-radius: 12px;
+  box-shadow: 0 0 15px rgba(56,189,248,0.08);
 }
 
 .value {
   color: #22c55e;
-  font-size: 18px;
   word-break: break-all;
 }
 
 button {
-  padding: 10px 14px;
+  padding: 12px;
+  width: 100%;
   border: none;
   border-radius: 8px;
   background: #38bdf8;
@@ -61,44 +64,52 @@ button {
   cursor: pointer;
 }
 
-button:hover { background: #0ea5e9; }
-
-input {
-  width: 100%;
-  padding: 10px;
-  margin: 5px 0;
-  border-radius: 6px;
-  border: none;
+button:hover {
+  background: #0ea5e9;
 }
 
-/* STATUS */
+.modal {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-box {
+  background: #111827;
+  padding: 20px;
+  border-radius: 12px;
+  width: 320px;
+}
+
+.option {
+  padding: 12px;
+  margin-top: 10px;
+  background: #1f2937;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.option:hover {
+  background: #374151;
+}
+
 .hidden { display: none; }
-
-.small {
-  color: #94a3b8;
-  font-size: 12px;
-}
 </style>
 </head>
 
 <body>
 
-<header>
-  <h1>XRPRippleFlare Crypto App</h1>
-  <button onclick="disconnect()">Disconnect</button>
-</header>
+<div class="topbar">
+  <h1>XRPRippleFlare Exchange</h1>
+  <button onclick="openModal()" style="width:auto;">Connect Wallet</button>
+</div>
 
 <div class="container">
 
-<!-- CONNECT -->
-<div id="connectBox" class="card">
-  <h2>Connect Wallet</h2>
-  <button onclick="connectMetaMask()">MetaMask</button>
-  <button onclick="connectWalletConnect()">WalletConnect</button>
-  <p id="error" style="color:red;"></p>
-</div>
-
-<!-- DASHBOARD -->
 <div id="dashboard" class="hidden">
 
   <div class="grid">
@@ -106,52 +117,61 @@ input {
     <div class="card">
       <h3>Wallet</h3>
       <div class="value" id="wallet"></div>
-      <div class="small">Connected Address</div>
     </div>
 
     <div class="card">
-      <h3>ETH Balance</h3>
-      <div class="value" id="eth"></div>
+      <h3>Network</h3>
+      <div class="value" id="network"></div>
     </div>
 
-    <div class="card">
-      <h3>XRP Price</h3>
-      <div class="value" id="xrp"></div>
-    </div>
-
-    <div class="card">
-      <h3>BTC Price</h3>
-      <div class="value" id="btc"></div>
-    </div>
-
-  </div>
-
-  <!-- SEND ETH -->
-  <div class="card" style="margin-top:20px;">
-    <h3>Send ETH</h3>
-    <input id="to" placeholder="Recipient address" />
-    <input id="amount" placeholder="Amount (ETH)" />
-    <button onclick="sendETH()">Send</button>
-    <p id="txStatus"></p>
   </div>
 
 </div>
 
 </div>
 
-<!-- WALLETCONNECT -->
+<!-- WALLET MODAL -->
+<div id="modal" class="modal hidden">
+  <div class="modal-box">
+    <h3>Select Wallet</h3>
+
+    <div class="option" onclick="connectInjected()">
+      🦊 MetaMask / Browser Wallet
+    </div>
+
+    <div class="option" onclick="connectWC()">
+      📱 WalletConnect (Mobile QR)
+    </div>
+
+    <div class="option" onclick="closeModal()">
+      ❌ Cancel
+    </div>
+  </div>
+</div>
+
+<!-- WalletConnect -->
 <script src="https://unpkg.com/@walletconnect/ethereum-provider@2.10.6/dist/index.umd.js"></script>
 
 <script>
 let provider;
 let signer;
-let wcProvider;
 
-// CONNECT METAMASK
-async function connectMetaMask() {
+/* MODAL */
+function openModal() {
+  document.getElementById("modal").classList.remove("hidden");
+}
+function closeModal() {
+  document.getElementById("modal").classList.add("hidden");
+}
+
+/* =========================
+   INJECTED WALLET (MetaMask / Brave / etc.)
+========================= */
+async function connectInjected() {
   try {
+
     if (!window.ethereum) {
-      error("MetaMask not found");
+      alert("No browser wallet detected. Use WalletConnect.");
       return;
     }
 
@@ -160,96 +180,54 @@ async function connectMetaMask() {
     signer = provider.getSigner();
 
     const addr = await signer.getAddress();
+    const net = await provider.getNetwork();
 
-    showApp(addr);
-    loadData();
+    showApp(addr, net.name);
+    closeModal();
 
   } catch (e) {
-    error(e.message);
+    alert(e.message);
   }
 }
 
-// WALLETCONNECT
-async function connectWalletConnect() {
+/* =========================
+   WALLETCONNECT (MOBILE + UNIVERSAL)
+========================= */
+async function connectWC() {
   try {
+
     const { EthereumProvider } = window.WalletConnectEthereumProvider;
 
-    wcProvider = await EthereumProvider.init({
-      projectId: "YOUR_PROJECT_ID_HERE",
+    const wc = await EthereumProvider.init({
+      projectId: "6eb8ae24484e78bb6c25a73a7195d774",
       chains: [1],
       showQrModal: true
     });
 
-    await wcProvider.connect();
+    await wc.connect();
 
-    provider = new ethers.providers.Web3Provider(wcProvider);
+    provider = new ethers.providers.Web3Provider(wc);
     signer = provider.getSigner();
 
     const addr = await signer.getAddress();
+    const net = await provider.getNetwork();
 
-    showApp(addr);
-    loadData();
+    showApp(addr, net.name);
+    closeModal();
 
   } catch (e) {
-    error(e.message);
+    alert(e.message);
   }
 }
 
-// SHOW APP
-function showApp(addr) {
-  document.getElementById("connectBox").classList.add("hidden");
+/* =========================
+   UI
+========================= */
+function showApp(address, network) {
   document.getElementById("dashboard").classList.remove("hidden");
-  document.getElementById("wallet").innerText = addr;
-}
 
-// LOAD DATA
-async function loadData() {
-  const bal = await provider.getBalance(await signer.getAddress());
-  document.getElementById("eth").innerText =
-    parseFloat(ethers.utils.formatEther(bal)).toFixed(4) + " ETH";
-
-  // XRP
-  const xrp = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=ripple&vs_currencies=usd")
-    .then(r => r.json());
-  document.getElementById("xrp").innerText = "$" + xrp.ripple.usd;
-
-  // BTC
-  const btc = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd")
-    .then(r => r.json());
-  document.getElementById("btc").innerText = "$" + btc.bitcoin.usd;
-}
-
-// SEND ETH
-async function sendETH() {
-  try {
-    const txStatus = document.getElementById("txStatus");
-
-    const tx = await signer.sendTransaction({
-      to: document.getElementById("to").value,
-      value: ethers.utils.parseEther(document.getElementById("amount").value)
-    });
-
-    txStatus.innerText = "Sending... " + tx.hash;
-
-    await tx.wait();
-
-    txStatus.innerText = "Confirmed ✅";
-
-  } catch (e) {
-    document.getElementById("txStatus").innerText = e.message;
-  }
-}
-
-// DISCONNECT
-function disconnect() {
-  provider = null;
-  signer = null;
-  location.reload();
-}
-
-// ERROR
-function error(msg) {
-  document.getElementById("error").innerText = msg;
+  document.getElementById("wallet").innerText = address;
+  document.getElementById("network").innerText = network;
 }
 </script>
 
