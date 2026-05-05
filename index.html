@@ -2,220 +2,254 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>XRPRippleFlare Pro</title>
+<title>XRPRippleFlare - Crypto App</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
 <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 
 <style>
-  body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: radial-gradient(circle at top, #0f172a, #020617);
-    color: white;
-  }
+body {
+  margin: 0;
+  font-family: Arial;
+  background: #0b1220;
+  color: white;
+}
 
-  header {
-    padding: 20px;
-    text-align: center;
-    border-bottom: 1px solid #1e293b;
-  }
+/* HEADER */
+header {
+  padding: 15px;
+  background: #0f172a;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 
-  h1 { color: #38bdf8; margin: 0; }
+h1 { color: #38bdf8; margin: 0; font-size: 20px; }
 
-  .wrap {
-    max-width: 900px;
-    margin: auto;
-    padding: 20px;
-  }
+/* LAYOUT */
+.container {
+  max-width: 1000px;
+  margin: auto;
+  padding: 20px;
+}
 
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 15px;
-    margin-top: 20px;
-  }
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit,minmax(250px,1fr));
+  gap: 15px;
+}
 
-  .card {
-    background: #0f172a;
-    padding: 15px;
-    border-radius: 12px;
-    box-shadow: 0 0 20px rgba(56,189,248,0.08);
-  }
+/* CARDS */
+.card {
+  background: #111827;
+  padding: 15px;
+  border-radius: 12px;
+}
 
-  button {
-    padding: 12px 16px;
-    margin-top: 10px;
-    border: none;
-    border-radius: 8px;
-    background: #38bdf8;
-    color: black;
-    font-weight: bold;
-    cursor: pointer;
-  }
+.value {
+  color: #22c55e;
+  font-size: 18px;
+  word-break: break-all;
+}
 
-  button:hover { background: #0ea5e9; }
+button {
+  padding: 10px 14px;
+  border: none;
+  border-radius: 8px;
+  background: #38bdf8;
+  font-weight: bold;
+  cursor: pointer;
+}
 
-  .value {
-    color: #22c55e;
-    word-break: break-all;
-  }
+button:hover { background: #0ea5e9; }
 
-  .label {
-    font-size: 13px;
-    color: #94a3b8;
-  }
+input {
+  width: 100%;
+  padding: 10px;
+  margin: 5px 0;
+  border-radius: 6px;
+  border: none;
+}
 
-  .hidden { display: none; }
+/* STATUS */
+.hidden { display: none; }
 
-  .topbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .badge {
-    padding: 5px 10px;
-    background: #1e293b;
-    border-radius: 20px;
-    font-size: 12px;
-  }
-
-  .error { color: #ef4444; }
+.small {
+  color: #94a3b8;
+  font-size: 12px;
+}
 </style>
 </head>
 
 <body>
 
 <header>
-  <h1>XRPRippleFlare</h1>
-  <p>Pro Web3 Dashboard</p>
+  <h1>XRPRippleFlare Crypto App</h1>
+  <button onclick="disconnect()">Disconnect</button>
 </header>
 
-<div class="wrap">
+<div class="container">
 
-  <!-- CONNECT VIEW -->
-  <div id="connectView" class="card">
-    <h2>Connect Wallet</h2>
-    <p>Access your Web3 dashboard</p>
-    <button onclick="connectWallet()">Connect MetaMask</button>
-    <div id="error" class="error"></div>
+<!-- CONNECT -->
+<div id="connectBox" class="card">
+  <h2>Connect Wallet</h2>
+  <button onclick="connectMetaMask()">MetaMask</button>
+  <button onclick="connectWalletConnect()">WalletConnect</button>
+  <p id="error" style="color:red;"></p>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" class="hidden">
+
+  <div class="grid">
+
+    <div class="card">
+      <h3>Wallet</h3>
+      <div class="value" id="wallet"></div>
+      <div class="small">Connected Address</div>
+    </div>
+
+    <div class="card">
+      <h3>ETH Balance</h3>
+      <div class="value" id="eth"></div>
+    </div>
+
+    <div class="card">
+      <h3>XRP Price</h3>
+      <div class="value" id="xrp"></div>
+    </div>
+
+    <div class="card">
+      <h3>BTC Price</h3>
+      <div class="value" id="btc"></div>
+    </div>
+
   </div>
 
-  <!-- DASHBOARD -->
-  <div id="dashboard" class="hidden">
-
-    <div class="topbar">
-      <h2>Dashboard</h2>
-      <span class="badge" id="networkBadge">Network</span>
-    </div>
-
-    <div class="grid">
-
-      <div class="card">
-        <div class="label">Wallet Address</div>
-        <div class="value" id="wallet"></div>
-      </div>
-
-      <div class="card">
-        <div class="label">ETH Balance</div>
-        <div class="value" id="balance"></div>
-      </div>
-
-      <div class="card">
-        <div class="label">XRP Price (Live)</div>
-        <div class="value" id="xrpPrice">Loading...</div>
-      </div>
-
-      <div class="card">
-        <div class="label">Actions</div>
-        <button onclick="disconnect()">Disconnect Wallet</button>
-      </div>
-
-    </div>
+  <!-- SEND ETH -->
+  <div class="card" style="margin-top:20px;">
+    <h3>Send ETH</h3>
+    <input id="to" placeholder="Recipient address" />
+    <input id="amount" placeholder="Amount (ETH)" />
+    <button onclick="sendETH()">Send</button>
+    <p id="txStatus"></p>
   </div>
 
 </div>
 
+</div>
+
+<!-- WALLETCONNECT -->
+<script src="https://unpkg.com/@walletconnect/ethereum-provider@2.10.6/dist/index.umd.js"></script>
+
 <script>
 let provider;
 let signer;
-let currentAccount = null;
+let wcProvider;
 
-async function connectWallet() {
+// CONNECT METAMASK
+async function connectMetaMask() {
   try {
-    document.getElementById("error").innerText = "";
-
     if (!window.ethereum) {
-      document.getElementById("error").innerText =
-        "MetaMask not installed";
+      error("MetaMask not found");
       return;
     }
 
     provider = new ethers.providers.Web3Provider(window.ethereum);
-
     await provider.send("eth_requestAccounts", []);
     signer = provider.getSigner();
 
-    const address = await signer.getAddress();
-    currentAccount = address;
+    const addr = await signer.getAddress();
 
-    document.getElementById("connectView").classList.add("hidden");
-    document.getElementById("dashboard").classList.remove("hidden");
+    showApp(addr);
+    loadData();
 
-    updateUI();
-
-    fetchBalance();
-    fetchXRPPrice();
-
-    listenWalletChanges();
-
-  } catch (err) {
-    document.getElementById("error").innerText = err.message;
+  } catch (e) {
+    error(e.message);
   }
 }
 
-async function updateUI() {
-  const network = await provider.getNetwork();
-  document.getElementById("networkBadge").innerText =
-    network.name + " (" + network.chainId + ")";
-
-  document.getElementById("wallet").innerText = currentAccount;
-}
-
-async function fetchBalance() {
-  const bal = await provider.getBalance(currentAccount);
-  const eth = ethers.utils.formatEther(bal);
-  document.getElementById("balance").innerText = parseFloat(eth).toFixed(4) + " ETH";
-}
-
-async function fetchXRPPrice() {
+// WALLETCONNECT
+async function connectWalletConnect() {
   try {
-    const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=ripple&vs_currencies=usd");
-    const data = await res.json();
-    document.getElementById("xrpPrice").innerText =
-      "$" + data.ripple.usd;
-  } catch {
-    document.getElementById("xrpPrice").innerText = "Error loading price";
+    const { EthereumProvider } = window.WalletConnectEthereumProvider;
+
+    wcProvider = await EthereumProvider.init({
+      projectId: "YOUR_PROJECT_ID_HERE",
+      chains: [1],
+      showQrModal: true
+    });
+
+    await wcProvider.connect();
+
+    provider = new ethers.providers.Web3Provider(wcProvider);
+    signer = provider.getSigner();
+
+    const addr = await signer.getAddress();
+
+    showApp(addr);
+    loadData();
+
+  } catch (e) {
+    error(e.message);
   }
 }
 
-function listenWalletChanges() {
-  window.ethereum.on("accountsChanged", (accounts) => {
-    if (accounts.length === 0) disconnect();
-    else location.reload();
-  });
-
-  window.ethereum.on("chainChanged", () => location.reload());
+// SHOW APP
+function showApp(addr) {
+  document.getElementById("connectBox").classList.add("hidden");
+  document.getElementById("dashboard").classList.remove("hidden");
+  document.getElementById("wallet").innerText = addr;
 }
 
+// LOAD DATA
+async function loadData() {
+  const bal = await provider.getBalance(await signer.getAddress());
+  document.getElementById("eth").innerText =
+    parseFloat(ethers.utils.formatEther(bal)).toFixed(4) + " ETH";
+
+  // XRP
+  const xrp = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=ripple&vs_currencies=usd")
+    .then(r => r.json());
+  document.getElementById("xrp").innerText = "$" + xrp.ripple.usd;
+
+  // BTC
+  const btc = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd")
+    .then(r => r.json());
+  document.getElementById("btc").innerText = "$" + btc.bitcoin.usd;
+}
+
+// SEND ETH
+async function sendETH() {
+  try {
+    const txStatus = document.getElementById("txStatus");
+
+    const tx = await signer.sendTransaction({
+      to: document.getElementById("to").value,
+      value: ethers.utils.parseEther(document.getElementById("amount").value)
+    });
+
+    txStatus.innerText = "Sending... " + tx.hash;
+
+    await tx.wait();
+
+    txStatus.innerText = "Confirmed ✅";
+
+  } catch (e) {
+    document.getElementById("txStatus").innerText = e.message;
+  }
+}
+
+// DISCONNECT
 function disconnect() {
   provider = null;
   signer = null;
-  currentAccount = null;
+  location.reload();
+}
 
-  document.getElementById("dashboard").classList.add("hidden");
-  document.getElementById("connectView").classList.remove("hidden");
+// ERROR
+function error(msg) {
+  document.getElementById("error").innerText = msg;
 }
 </script>
 
